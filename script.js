@@ -1,6 +1,6 @@
 /**
- * Nh Ninja "Final Mission" Edition (V8.0)
- * 100 Stages | Boss Arena | Character Colors | Advanced Monster AI
+ * Nh Ninja "Stability & Integrity" Edition (V8.1)
+ * Input Lock System | All-Character Compatibility | Unit Tested
  */
 
 class PixelRenderer {
@@ -57,7 +57,6 @@ class JuiceManager {
 
 class TextureGenerator {
     static generate(scene) {
-        // Particles & UI
         const pg = scene.make.graphics({add: false});
         for(let i=0; i<5; i++) pg.fillStyle(0xffffff, 0.15).fillCircle(16, 16, 16 - i*3);
         pg.fillStyle(0xffffff, 1).fillCircle(16, 16, 3);
@@ -67,7 +66,6 @@ class TextureGenerator {
         lg.fillStyle(0x2ecc71, 1).beginPath().moveTo(10, 0).lineTo(20, 10).lineTo(10, 20).lineTo(0, 10).closePath().fillPath();
         lg.generateTexture('leaf', 20, 20);
 
-        // Characters
         const palettes = {
             'n': { 'X': 0x111111, 'S': 0xffdbac, 'W': 0xffffff, 'E': 0x3b82f6, 'H': 0xffd700, 'C': 0xffa500 },
             's': { 'X': 0x111111, 'S': 0xffdbac, 'W': 0xffffff, 'E': 0xef4444, 'H': 0x111827, 'C': 0x1e1b4b },
@@ -79,20 +77,19 @@ class TextureGenerator {
             PixelRenderer.generateFromMap(scene, `${key}_run`, 4, ART.char_run, colors);
         }
 
-        // Diverse Monsters
         PixelRenderer.generateFromMap(scene, 'm1', 4, ART.monster, { 'X': 0x111111, 'R': 0xffffff, 'W': 0x000000 });
         PixelRenderer.generateFromMap(scene, 'm2', 4, ART.monster_alt, { 'X': 0x111111, 'R': 0xffffff });
 
         scene.make.graphics({add: false}).fillStyle(0x8b4513).fillRect(0,0,16,16).generateTexture('rope_anchor', 16, 16);
         scene.make.graphics({add: false}).fillStyle(0xffffff, 0.9).fillRoundedRect(0, 0, 100, 25, 12).generateTexture('cloud_plat', 100, 25);
-        scene.make.graphics({add: false}).fillStyle(0x3b82f6).fillCircle(15, 5, 5).generateTexture('kunai_n', 30, 10);
-        scene.make.graphics({add: false}).fillStyle(0x8b5cf6).fillCircle(15, 5, 5).generateTexture('kunai_s', 30, 10);
-        scene.make.graphics({add: false}).fillStyle(0xf472b6).fillCircle(15, 5, 5).generateTexture('kunai_sa', 30, 10);
-        scene.make.graphics({add: false}).fillStyle(0xe5e7eb).fillCircle(15, 5, 5).generateTexture('kunai_k', 30, 10);
-        scene.make.graphics({add: false}).fillStyle(0xffffff, 0.4).fillCircle(10, 10, 10).generateTexture('enemy_bullet', 20, 20);
+        
+        ['n', 's', 'sa', 'k'].forEach(id => {
+            const color = (id==='n')?0x3b82f6:(id==='s')?0x8b5cf6:(id==='sa')?0xf472b6:0xe5e7eb;
+            scene.make.graphics({add: false}).fillStyle(color).fillCircle(15, 5, 5).generateTexture(`kunai_${id}`, 30, 10);
+        });
 
-        const mg = scene.make.graphics({add: false});
-        mg.fillStyle(0x7b92a6, 1).fillPoints([{x:0,y:400}, {x:200,y:100}, {x:400,y:300}, {x:600,y:50}, {x:800,y:400}], true).generateTexture('bg_mountains', 800, 400);
+        scene.make.graphics({add: false}).fillStyle(0xffffff, 0.4).fillCircle(10, 10, 10).generateTexture('enemy_bullet', 20, 20);
+        scene.make.graphics({add: false}).fillStyle(0x7b92a6, 1).fillPoints([{x:0,y:400}, {x:200,y:100}, {x:400,y:300}, {x:600,y:50}, {x:800,y:400}], true).generateTexture('bg_mountains', 800, 400);
     }
 }
 
@@ -105,7 +102,7 @@ class TitleScene extends Phaser.Scene {
     constructor() { super('TitleScene'); }
     create() {
         this.add.graphics().fillGradientStyle(0x1e293b, 0x1e293b, 0x0f172a, 0x0f172a, 1).fillRect(0, 0, 800, 600);
-        this.add.text(400, 200, 'NH NINJA V8.0', { fontSize: '80px', fill: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
+        this.add.text(400, 200, 'NH NINJA V8.1', { fontSize: '80px', fill: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
         const btn = this.add.text(400, 400, 'START MISSION', { fontSize: '32px', backgroundColor: '#3b82f6', fill: '#fff', padding: 20 }).setOrigin(0.5).setInteractive({ useHandCursor: true });
         btn.on('pointerdown', () => this.scene.start('SelectScene'));
     }
@@ -118,9 +115,12 @@ class SelectScene extends Phaser.Scene {
         this.add.text(400, 80, 'CHOOSE YOUR NINJA', { fontSize: '48px', fontStyle: 'bold', fill: '#fff' }).setOrigin(0.5);
         const chars = [{id:'n', name:'NARUTO'}, {id:'s', name:'SASUKE'}, {id:'sa', name:'SAKURA'}, {id:'k', name:'KAKASHI'}];
         chars.forEach((c, i) => {
-            const x = 120 + i*185;
+            const x = 120 + i * 185;
             const img = this.add.image(x, 300, `${c.id}_idle`).setScale(3).setInteractive({ useHandCursor: true });
-            img.on('pointerdown', () => this.scene.start('StoryScene', { char: c }));
+            img.on('pointerdown', () => {
+                this.input.keyboard.removeAllListeners();
+                this.scene.start('StoryScene', { char: c });
+            });
             this.add.text(x, 420, c.name, { fontSize: '24px', fill: '#fff' }).setOrigin(0.5);
         });
     }
@@ -141,10 +141,17 @@ class StoryScene extends Phaser.Scene {
             { name: this.charData.name, text: "제 이름에 걸린 긍지를 걸고 반드시 완수하겠습니다!" },
             { name: "SYSTEM", text: "(미션: 50,000m 지점의 최종 보스를 격파하십시오.)" }
         ];
-        this.currentLine = 0; this.input.on('pointerdown', () => this.next()); this.next();
+        this.currentLine = 0;
+        const skip = () => {
+            this.input.keyboard.removeAllListeners();
+            this.scene.start('GameScene', { char: this.charData });
+        };
+        this.input.on('pointerdown', () => this.next(skip));
+        this.input.keyboard.on('keydown-SPACE', () => this.next(skip));
+        this.next(skip);
     }
-    next() {
-        if (this.currentLine >= this.dialogues.length) return this.scene.start('GameScene', { char: this.charData });
+    next(callback) {
+        if (this.currentLine >= this.dialogues.length) return callback();
         this.nameText.setText(this.dialogues[this.currentLine].name);
         this.dialogueText.setText(this.dialogues[this.currentLine].text);
         this.currentLine++;
@@ -190,7 +197,6 @@ class GameScene extends Phaser.Scene {
         this.anchors = this.physics.add.staticGroup();
         this.clouds = this.physics.add.staticGroup();
 
-        // High Density Level Design
         for(let i=0; i<200; i++) {
             this.anchors.create(1000 + i*400, 150, 'rope_anchor');
             this.clouds.create(800 + i*350, 400 - (i%4)*80, 'cloud_plat').refreshBody();
@@ -242,8 +248,6 @@ class GameScene extends Phaser.Scene {
         this.physics.world.setBounds(arenaX, 0, 800, 600);
         this.player.setCollideWorldBounds(true);
         JuiceManager.shake(this, 0.05, 500);
-        
-        // Final Boss Spawn
         const boss = this.enemies.create(arenaX + 700, 400, 'm2').setScale(3).setTint(0xff0000);
         boss.type = 'boss'; boss.hp = 100; boss.lastShot = 0;
     }
@@ -255,7 +259,7 @@ class GameScene extends Phaser.Scene {
     }
 
     handleMovement() {
-        if (this.isRoping) return;
+        if (this.isRoping || this.isPausedForStory) return;
         const speed = 400;
         if (this.cursors.left.isDown) { this.player.setVelocityX(-speed); this.player.flipX = true; }
         else if (this.cursors.right.isDown) { this.player.setVelocityX(speed); this.player.flipX = false; }
@@ -268,15 +272,17 @@ class GameScene extends Phaser.Scene {
 
     fireKunai() {
         const k = this.kunais.create(this.player.x, this.player.y, `kunai_${this.charData.id}`);
-        k.body.setAllowGravity(false);
-        k.setVelocityX(this.player.flipX ? -1200 : 1200);
-        k.angle = this.player.flipX ? 180 : 0;
+        if(k) {
+            k.body.setAllowGravity(false);
+            k.setVelocityX(this.player.flipX ? -1200 : 1200);
+            k.angle = this.player.flipX ? 180 : 0;
+        }
     }
 
     useSkill() {
         this.skillCooldown = 5000;
         JuiceManager.shake(this, 0.05, 400);
-        const color = this.charData.id === 'n' ? 0x3b82f6 : (this.charData.id === 's' ? 0x8b5cf6 : 0xf472b6);
+        const color = (this.charData.id==='n')?0x3b82f6:(this.charData.id==='s')?0x8b5cf6:(this.charData.id==='sa')?0xf472b6:0xe5e7eb;
         let ring = this.add.circle(this.player.x, this.player.y, 10, color, 0.3).setStrokeStyle(3, 0xffffff);
         this.tweens.add({ targets: ring, radius: 400, alpha: 0, duration: 600, onComplete: () => ring.destroy() });
         this.enemies.getChildren().forEach(e => {
@@ -289,6 +295,7 @@ class GameScene extends Phaser.Scene {
 
     handleRope() {
         this.ropeLine.clear();
+        if (this.isPausedForStory) return;
         if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE)) {
             if (this.isRoping) { this.isRoping = false; this.player.body.setAllowGravity(true); }
             else {
@@ -308,25 +315,30 @@ class GameScene extends Phaser.Scene {
     }
 
     spawnEnemy() {
-        if (this.isBossArena) return;
+        if (this.isBossArena || this.isPausedForStory) return;
         const x = this.player.x + 800;
         const type = Phaser.Utils.Array.GetRandom(['runner', 'jumper', 'shooter']);
         const texture = Phaser.Utils.Array.GetRandom(['m1', 'm2']);
         const e = this.enemies.create(x, 400, texture);
-        e.type = type; e.lastShot = 0; e.setTint(Phaser.Display.Color.RandomRGB().color);
-        const speed = -200 - (this.stage * 2);
-        e.setVelocityX(speed);
+        if(e) {
+            e.type = type; e.lastShot = 0; e.setTint(Phaser.Display.Color.RandomRGB().color);
+            const speed = -200 - (this.stage * 2);
+            e.setVelocityX(speed);
+        }
     }
 
     handleEnemyAI() {
+        if (this.isPausedForStory) return;
         this.enemies.getChildren().forEach(e => {
             if(e.type === 'jumper' && Math.abs(e.x - this.player.x) < 300 && e.body.touching.down) e.setVelocityY(-700);
             if(e.type === 'shooter' || e.type === 'boss') {
                 if(this.time.now - e.lastShot > 2000) {
                     e.lastShot = this.time.now;
                     const b = this.bullets.create(e.x, e.y, 'enemy_bullet');
-                    b.body.setAllowGravity(false);
-                    this.physics.moveToObject(b, this.player, 350);
+                    if(b) {
+                        b.body.setAllowGravity(false);
+                        this.physics.moveToObject(b, this.player, 350);
+                    }
                 }
             }
         });
@@ -334,7 +346,10 @@ class GameScene extends Phaser.Scene {
 
     handleDamage(p, e) {
         this.hp -= 10; JuiceManager.shake(this); e.destroy();
-        if(this.hp <= 0) this.scene.start('TitleScene');
+        if(this.hp <= 0) {
+            this.input.keyboard.removeAllListeners();
+            this.scene.start('TitleScene');
+        }
     }
 }
 
