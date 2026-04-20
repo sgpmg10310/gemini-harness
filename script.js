@@ -1,6 +1,6 @@
 /**
- * Nh Ninja "World & Story" Edition (V6.1)
- * Fixed Syntax Errors | Extended Story | 3D Skill Effects
+ * Nh Ninja "World & Story" Edition (V6.2)
+ * Full Logic Restoration | Seamless Scene Transitions | HD UI
  */
 
 class PixelRenderer {
@@ -67,14 +67,16 @@ class JuiceManager {
 class TextureGenerator {
     static generate(scene) {
         const pg = scene.add.graphics();
-        pg.fillStyle(0xffffff).fillCircle(8, 8, 8); 
-        pg.generateTexture('pixel', 16, 16); 
-        pg.destroy();
+        for(let i=0; i<5; i++) pg.fillStyle(0xffffff, 0.2).fillCircle(16, 16, 16 - i*3);
+        pg.fillStyle(0xffffff, 1).fillCircle(16, 16, 4);
+        pg.generateTexture('pixel', 32, 32); pg.destroy();
 
-        const petal1 = scene.add.graphics().fillStyle(0xffb7c5).fillCircle(4, 4, 4); 
-        petal1.generateTexture('petal1', 8, 8); petal1.destroy();
-        const petal2 = scene.add.graphics().fillStyle(0xff69b4).fillCircle(6, 6, 6); 
-        petal2.generateTexture('petal2', 12, 12); petal2.destroy();
+        const drawPetal = (key, size, color) => {
+            const g = scene.add.graphics();
+            g.fillStyle(color, 1); g.fillEllipse(size/2, size/2, size, size/2);
+            g.generateTexture(key, size, size); g.destroy();
+        };
+        drawPetal('petal1', 12, 0xffb7c5); drawPetal('petal2', 16, 0xff69b4);
 
         const palettes = {
             'n': { 'X': 0x111111, 'S': 0xffdbac, 'W': 0xffffff, 'E': 0x3b82f6, 'H': 0xffd700, 'C': 0xffa500 },
@@ -86,27 +88,57 @@ class TextureGenerator {
             PixelRenderer.generateFromMap(scene, `${key}_idle`, 4, ART.char_idle, colors);
             PixelRenderer.generateFromMap(scene, `${key}_run`, 4, ART.char_run, colors);
         }
-
         PixelRenderer.generateFromMap(scene, 'rope_anchor', 4, ART.anchor, { 'X': 0x111111, 'D': 0xcccccc, 'B': 0x8b4513 });
         PixelRenderer.generateFromMap(scene, 'spring', 4, ART.spring, { 'X': 0x111111, 'C': 0xffff00, 'G': 0x555555 });
         PixelRenderer.generateFromMap(scene, 'e1', 5, ART.enemy, { 'X': 0x111111, 'R': 0xdc2626, 'W': 0xffff00 });
-
-        const kg = scene.add.graphics().fillStyle(0x888888).fillPoints([{x:0,y:5}, {x:15,y:5}, {x:20,y:2}, {x:30,y:5}, {x:20,y:8}, {x:15,y:5}], true);
-        kg.generateTexture('kunai_v2', 30, 10); kg.destroy();
-
-        const cg = scene.add.graphics().fillStyle(0xffffff, 0.9).fillRoundedRect(0, 0, 100, 25, 12);
-        cg.generateTexture('cloud_plat', 100, 25); cg.destroy();
+        
+        scene.add.graphics().fillStyle(0x888888).fillPoints([{x:0,y:5}, {x:15,y:5}, {x:20,y:2}, {x:30,y:5}, {x:20,y:8}, {x:15,y:5}], true).generateTexture('kunai_v2', 30, 10).destroy();
+        scene.add.graphics().fillStyle(0xffffff, 0.9).fillRoundedRect(0, 0, 100, 25, 12).generateTexture('cloud_plat', 100, 25).destroy();
 
         const mg = scene.add.graphics();
         mg.fillStyle(0x7b92a6, 1).fillPoints([{x:0,y:400}, {x:200,y:100}, {x:400,y:300}, {x:600,y:50}, {x:800,y:400}], true);
-        mg.fillStyle(0xffffff, 0.8).fillPoints([{x:160,y:160}, {x:200,y:100}, {x:240,y:140}, {x:200,y:180}], true);
-        mg.fillPoints([{x:550,y:130}, {x:600,y:50}, {x:650,y:130}, {x:600,y:160}], true);
-        mg.generateTexture('bg_mountains', 800, 400); mg.destroy();
+        mg.fillStyle(0xffffff, 0.8).fillPoints([{x:160,y:160}, {x:200,y:100}, {x:240,y:140}, {x:200,y:180}], true).generateTexture('bg_mountains', 800, 400).destroy();
 
         const fcg = scene.add.graphics().fillStyle(0xffffff, 0.6);
-        fcg.fillCircle(50, 50, 30); fcg.fillCircle(80, 40, 40); fcg.fillCircle(110, 50, 30);
-        fcg.fillCircle(250, 80, 25); fcg.fillCircle(280, 70, 35); fcg.fillCircle(310, 80, 25);
-        fcg.generateTexture('bg_clouds', 400, 150); fcg.destroy();
+        fcg.fillCircle(50, 50, 30); fcg.fillCircle(80, 40, 40); fcg.fillCircle(110, 50, 30).generateTexture('bg_clouds', 400, 150).destroy();
+    }
+}
+
+class PreloadScene extends Phaser.Scene {
+    constructor() { super('PreloadScene'); }
+    preload() {
+        this.load.on('complete', () => { TextureGenerator.generate(this); this.scene.start('TitleScene'); });
+        this.load.audio('music_title', 'https://cdn.pixabay.com/audio/2022/03/10/audio_c8c8a1b1b1.mp3');
+    }
+}
+
+class TitleScene extends Phaser.Scene {
+    constructor() { super('TitleScene'); }
+    create() {
+        const { width, height } = this.cameras.main;
+        this.add.graphics().fillGradientStyle(0x4facfe, 0x4facfe, 0x00f2fe, 0x00f2fe, 1).fillRect(0, 0, 800, 600);
+        this.add.text(width/2, height/2-100, 'NH NINJA V6.2', { fontSize: '80px', fill: '#fff', fontStyle: 'bold', stroke: '#3b82f6', strokeThickness: 10 }).setOrigin(0.5);
+        this.add.text(width/2, height/2, 'HD WORLD & STORY EDITION', { fontSize: '24px', fill: '#000', fontStyle: 'bold' }).setOrigin(0.5);
+        const btn = this.add.text(width/2, height/2+100, 'START ADVENTURE', { fontSize: '32px', backgroundColor: '#3b82f6', fill: '#fff', padding: 20 }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        btn.on('pointerdown', () => this.scene.start('SelectScene'));
+        this.tweens.add({ targets: btn, scale: 1.1, duration: 1000, yoyo: true, repeat: -1 });
+    }
+}
+
+class SelectScene extends Phaser.Scene {
+    constructor() { super('SelectScene'); }
+    create() {
+        this.add.graphics().fillGradientStyle(0x4facfe, 0x4facfe, 0x00f2fe, 0x00f2fe, 1).fillRect(0, 0, 800, 600);
+        this.add.text(400, 80, 'CHOOSE YOUR WARRIOR', { fontSize: '48px', fontStyle: 'bold', fill: '#fff', stroke: '#000', strokeThickness: 6 }).setOrigin(0.5);
+        const chars = [{id:'n', name:'NARUTO'}, {id:'s', name:'SASUKE'}, {id:'sa', name:'SAKURA'}, {id:'k', name:'KAKASHI'}];
+        chars.forEach((c, i) => {
+            const x = 120 + i*185;
+            const img = this.add.image(x, 300, `${c.id}_idle`).setScale(2.5).setInteractive({ useHandCursor: true });
+            img.on('pointerdown', () => this.scene.start('StoryScene', { char: c }));
+            this.add.text(x, 420, c.name, { fontSize: '24px', fill: '#fff', fontStyle: 'bold', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5);
+            img.on('pointerover', () => { img.setTexture(`${c.id}_run`); img.setScale(2.8); });
+            img.on('pointerout', () => { img.setTexture(`${c.id}_idle`); img.setScale(2.5); });
+        });
     }
 }
 
@@ -120,8 +152,9 @@ class StoryScene extends Phaser.Scene {
         this.add.rectangle(w/2, h - 100, w - 40, 160, 0x111111, 0.9).setStrokeStyle(4, 0xffffff);
         this.nameText = this.add.text(40, h - 170, '', { fontSize: '28px', fontStyle: 'bold', fill: '#ff0' });
         this.dialogueText = this.add.text(40, h - 130, '', { fontSize: '24px', fill: '#fff', wordWrap: { width: 720 } });
-        this.promptText = this.add.text(w - 60, h - 40, '▼', { fontSize: '24px', fill: '#ff0' }).setOrigin(0.5);
-        this.tweens.add({ targets: this.promptText, y: h-30, duration: 500, yoyo: true, repeat: -1 });
+        const prompt = this.add.text(w - 60, h - 40, '▼', { fontSize: '24px', fill: '#ff0' }).setOrigin(0.5);
+        this.tweens.add({ targets: prompt, y: h-30, duration: 500, yoyo: true, repeat: -1 });
+
         this.dialogues = [
             { name: "HOKAGE", text: "마을의 금지된 두루마리를 탈주 닌자들에게 탈취당했다..." },
             { name: "HOKAGE", text: "그 두루마리에는 고대의 강력한 봉인술이 담겨 있어. 적들의 손에 넘어가면 재앙이 닥칠 것이다." },
@@ -164,12 +197,9 @@ class StoryScene extends Phaser.Scene {
 class GameScene extends Phaser.Scene {
     constructor() { super('GameScene'); }
     init(data) {
-        this.charData = data.char; this.hp = 100; this.score = 0;
-        this.dist = 0; this.isGameOver = false;
-        this.skillUnlocked = false; this.skillCooldown = 0;
-        this.isRoping = false; this.ropeTarget = null;
-        this.midStoryTriggered = false; 
-        this.isPausedForStory = false;
+        this.charData = data.char; this.hp = 100; this.score = 0; this.dist = 0;
+        this.isGameOver = false; this.skillUnlocked = false; this.skillCooldown = 0;
+        this.isRoping = false; this.ropeTarget = null; this.midStoryTriggered = false; this.isPausedForStory = false;
     }
 
     create() {
@@ -177,30 +207,21 @@ class GameScene extends Phaser.Scene {
         this.physics.world.setBounds(0, 0, worldWidth, 600);
         this.cameras.main.setBounds(0, 0, worldWidth, 600);
         
-        const sky = this.add.graphics().setScrollFactor(0);
-        sky.fillGradientStyle(0x4facfe, 0x4facfe, 0x00f2fe, 0x00f2fe, 1);
-        sky.fillRect(0, 0, 800, 600);
-
+        this.add.graphics().setScrollFactor(0).fillGradientStyle(0x4facfe, 0x4facfe, 0x00f2fe, 0x00f2fe, 1).fillRect(0, 0, 800, 600);
         this.bgMountains = this.add.tileSprite(0, 200, 800, 400, 'bg_mountains').setOrigin(0).setScrollFactor(0);
         this.bgClouds = this.add.tileSprite(0, 50, 800, 150, 'bg_clouds').setOrigin(0).setScrollFactor(0).setAlpha(0.8);
 
         this.platforms = this.physics.add.staticGroup();
         for(let i=0; i<40; i++) {
             let g = this.add.graphics();
-            g.fillStyle(0x32cd32).fillRect(0, 0, 600, 20);
-            g.fillStyle(0x8b4513).fillRect(0, 20, 600, 60);
+            g.fillStyle(0x32cd32).fillRect(0, 0, 600, 20); g.fillStyle(0x8b4513).fillRect(0, 20, 600, 60);
             g.generateTexture(`g${i}`, 600, 80);
             this.platforms.create(300 + i*600, 560, `g${i}`).refreshBody(); g.destroy();
         }
 
         this.blossoms = this.add.particles(0, 0, ['petal1', 'petal2'], {
-            x: { min: 0, max: 1200 }, y: -50,
-            gravityY: 30, gravityX: -10,
-            speedX: { min: -20, max: -80 }, speedY: { min: 10, max: 40 },
-            lifespan: 12000, quantity: 1,
-            scale: { start: 0.5, end: 1.2, ease: 'Sine.easeInOut' },
-            rotate: { min: 0, max: 360 },
-            alpha: { start: 0.8, end: 0 },
+            x: { min: 0, max: 1200 }, y: -50, gravityY: 30, gravityX: -10, speedX: { min: -20, max: -80 }, speedY: { min: 10, max: 40 },
+            lifespan: 12000, quantity: 1, scale: { start: 0.5, end: 1.2 }, rotate: { min: 0, max: 360 }, alpha: { start: 0.8, end: 0 },
             emitZone: { type: 'random', source: new Phaser.Geom.Rectangle(0, -50, 1200, 50) }
         }).setScrollFactor(0);
 
@@ -252,9 +273,7 @@ class GameScene extends Phaser.Scene {
         this.bgMountains.tilePositionX = this.cameras.main.scrollX * 0.1;
         this.bgClouds.tilePositionX = (this.cameras.main.scrollX * 0.3) + (time * 0.02);
 
-        if (this.dist >= 500 && !this.midStoryTriggered) {
-            this.triggerMidStory();
-        }
+        if (this.dist >= 500 && !this.midStoryTriggered) this.triggerMidStory();
 
         if (!this.skillUnlocked && this.dist > 100) {
             this.skillUnlocked = true; this.skillIcon.setText('SKILL');
@@ -263,14 +282,10 @@ class GameScene extends Phaser.Scene {
         }
 
         this.updateHPBar(); this.handleMovement(delta); this.handleRope(); this.updateAnimation(time);
-        
         if (this.skillCooldown > 0) {
-            this.skillCooldown -= delta;
-            this.cdText.setText(Math.ceil(this.skillCooldown/1000));
+            this.skillCooldown -= delta; this.cdText.setText(Math.ceil(this.skillCooldown/1000));
             this.skillBtn.setFillStyle(0x111111, 0.9);
-        } else {
-            this.cdText.setText(''); this.skillBtn.setFillStyle(0x333333, 0.8);
-        }
+        } else { this.cdText.setText(''); this.skillBtn.setFillStyle(0x333333, 0.8); }
     }
 
     updateHPBar() {
@@ -321,46 +336,28 @@ class GameScene extends Phaser.Scene {
     }
 
     triggerMidStory() {
-        this.midStoryTriggered = true;
-        this.isPausedForStory = true;
-        this.physics.pause();
-
-        const dialogues = [
+        this.midStoryTriggered = true; this.isPausedForStory = true; this.physics.pause();
+        const lines = [
             { name: this.charData.name, text: "적들의 흔적이 점점 짙어지고 있어... 거의 다 왔다!" },
             { name: "탈주 닌자", text: "끈질긴 녀석이군. 하지만 두루마리의 봉인은 이미 풀리기 시작했다!" },
             { name: this.charData.name, text: "닥쳐라! 마을의 보물을 더럽히게 두지 않겠다!" }
         ];
-
-        this.showMidStoryDialogue(dialogues);
+        this.showMidStoryDialogue(lines);
     }
 
     showMidStoryDialogue(lines) {
-        const w = 800, h = 600;
         const group = this.add.container(0, 0).setDepth(3000).setScrollFactor(0);
-        
-        const bg = this.add.rectangle(w/2, h/2, w, h, 0x000000, 0.7);
-        const box = this.add.rectangle(w/2, h - 100, w - 40, 160, 0x111111, 0.9).setStrokeStyle(4, 0xffffff);
-        const nameTxt = this.add.text(40, h - 170, '', { fontSize: '28px', fontStyle: 'bold', fill: '#ff0' });
-        const msgTxt = this.add.text(40, h - 130, '', { fontSize: '24px', fill: '#fff', wordWrap: { width: 720 } });
-        
+        const bg = this.add.rectangle(400, 300, 800, 600, 0x000000, 0.7).setInteractive();
+        const box = this.add.rectangle(400, 500, 760, 160, 0x111111, 0.9).setStrokeStyle(4, 0xffffff);
+        const nameTxt = this.add.text(40, 430, '', { fontSize: '28px', fontStyle: 'bold', fill: '#ff0' });
+        const msgTxt = this.add.text(40, 470, '', { fontSize: '24px', fill: '#fff', wordWrap: { width: 720 } });
         group.add([bg, box, nameTxt, msgTxt]);
-
         let current = 0;
         const next = () => {
-            if (current >= lines.length) {
-                group.destroy();
-                this.isPausedForStory = false;
-                this.physics.resume();
-                return;
-            }
-            nameTxt.setText(lines[current].name);
-            msgTxt.setText(lines[current].text);
-            current++;
+            if (current >= lines.length) { group.destroy(); this.isPausedForStory = false; this.physics.resume(); return; }
+            nameTxt.setText(lines[current].name); msgTxt.setText(lines[current].text); current++;
         };
-
-        bg.setInteractive().on('pointerdown', next);
-        this.input.keyboard.once('keydown-SPACE', next);
-        next();
+        bg.on('pointerdown', next); this.input.keyboard.once('keydown-SPACE', next); next();
     }
 
     handleCloud(p, c) {
@@ -373,20 +370,16 @@ class GameScene extends Phaser.Scene {
     useSkill() {
         this.skillCooldown = 5000; JuiceManager.shake(this, 0.05, 400);
         const color = this.charData.id === 'n' ? 0x3b82f6 : (this.charData.id === 's' ? 0x8b5cf6 : 0xf472b6);
-        
         for(let i=0; i<4; i++) {
             let ring = this.add.circle(this.player.x, this.player.y, 10, color, 0.3).setStrokeStyle(3, 0xffffff, 0.6);
             this.tweens.add({
-                targets: ring, radius: 200, scaleX: 2, scaleY: 0.4, 
-                angle: 360, alpha: 0, duration: 800, delay: i*150, ease: 'Cubic.out', onComplete: () => ring.destroy()
+                targets: ring, radius: 200, scaleX: 2, scaleY: 0.4, angle: 360, alpha: 0, duration: 800, delay: i*150, ease: 'Cubic.out', onComplete: () => ring.destroy()
             });
         }
         let fx = this.add.circle(this.player.x, this.player.y, 180, color, 0);
         this.physics.add.existing(fx);
         this.physics.add.overlap(fx, this.enemies, (f, e) => {
-            const ex = e.x, ey = e.y; e.destroy();
-            JuiceManager.emitParticles(this, ex, ey, 'EXPLOSION', color);
-            this.score += 300;
+            const ex = e.x, ey = e.y; e.destroy(); JuiceManager.emitParticles(this, ex, ey, 'EXPLOSION', color); this.score += 300;
         });
         this.time.delayedCall(1000, () => fx.destroy());
     }
@@ -395,8 +388,7 @@ class GameScene extends Phaser.Scene {
         const k = this.kunais.create(this.player.x + (this.player.flipX ? -30 : 30), this.player.y, 'kunai_v2');
         k.body.setAllowGravity(false); k.setVelocityX(this.player.flipX ? -1500 : 1500); k.angle = this.player.flipX ? 180 : 0;
         this.physics.add.overlap(k, this.enemies, (kn, en) => {
-            const ex = en.x, ey = en.y; en.destroy(); kn.destroy(); this.score += 150;
-            JuiceManager.emitParticles(this, ex, ey, 'EXPLOSION');
+            const ex = en.x, ey = en.y; en.destroy(); kn.destroy(); this.score += 150; JuiceManager.emitParticles(this, ex, ey, 'EXPLOSION');
         });
     }
 
@@ -407,52 +399,9 @@ class GameScene extends Phaser.Scene {
         this.tweens.add({ targets: this.hpBar, x: 2, duration: 50, yoyo: true, repeat: 3 });
         e.destroy();
         if (this.hp <= 0) {
-            this.isGameOver = true; this.physics.pause();
-            this.cameras.main.fade(1000, 0, 0, 0);
+            this.isGameOver = true; this.physics.pause(); this.cameras.main.fade(1000, 0, 0, 0);
             this.time.delayedCall(1000, () => this.scene.start('TitleScene'));
         }
-    }
-}
-
-class PreloadScene extends Phaser.Scene {
-    constructor() { super('PreloadScene'); }
-    preload() {
-        this.load.on('complete', () => { TextureGenerator.generate(this); this.scene.start('TitleScene'); });
-        this.load.audio('music_title', 'https://cdn.pixabay.com/audio/2022/03/10/audio_c8c8a1b1b1.mp3');
-    }
-}
-
-class TitleScene extends Phaser.Scene {
-    constructor() { super('TitleScene'); }
-    create() {
-        const { width, height } = this.cameras.main;
-        const sky = this.add.graphics();
-        sky.fillGradientStyle(0x4facfe, 0x4facfe, 0x00f2fe, 0x00f2fe, 1);
-        sky.fillRect(0, 0, 800, 600);
-        this.add.text(width/2, height/2-100, 'NH NINJA V6.1', { fontSize: '80px', fill: '#fff', fontStyle: 'bold', stroke: '#3b82f6', strokeThickness: 10 }).setOrigin(0.5);
-        this.add.text(width/2, height/2, 'HD WORLD & STORY EDITION', { fontSize: '24px', fill: '#000', fontStyle: 'bold' }).setOrigin(0.5);
-        const btn = this.add.text(width/2, height/2+100, 'START ADVENTURE', { fontSize: '32px', backgroundColor: '#3b82f6', fill: '#fff', padding: 20 }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-        btn.on('pointerdown', () => this.scene.start('SelectScene'));
-        this.tweens.add({ targets: btn, scale: 1.1, duration: 1000, yoyo: true, repeat: -1 });
-    }
-}
-
-class SelectScene extends Phaser.Scene {
-    constructor() { super('SelectScene'); }
-    create() {
-        const sky = this.add.graphics();
-        sky.fillGradientStyle(0x4facfe, 0x4facfe, 0x00f2fe, 0x00f2fe, 1);
-        sky.fillRect(0, 0, 800, 600);
-        this.add.text(400, 80, 'CHOOSE YOUR WARRIOR', { fontSize: '48px', fontStyle: 'bold', fill: '#fff', stroke: '#000', strokeThickness: 6 }).setOrigin(0.5);
-        const chars = [{id:'n', name:'NARUTO'}, {id:'s', name:'SASUKE'}, {id:'sa', name:'SAKURA'}, {id:'k', name:'KAKASHI'}];
-        chars.forEach((c, i) => {
-            const x = 120 + i*185;
-            const img = this.add.image(x, 300, `${c.id}_idle`).setScale(2.5).setInteractive({ useHandCursor: true });
-            img.on('pointerdown', () => this.scene.start('StoryScene', { char: c }));
-            this.add.text(x, 420, c.name, { fontSize: '24px', fill: '#fff', fontStyle: 'bold', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5);
-            img.on('pointerover', () => { img.setTexture(`${c.id}_run`); img.setScale(2.8); });
-            img.on('pointerout', () => { img.setTexture(`${c.id}_idle`); img.setScale(2.5); });
-        });
     }
 }
 
@@ -460,10 +409,6 @@ const config = {
     type: Phaser.AUTO, width: 800, height: 600, parent: 'game-container',
     render: { antialias: true, roundPixels: false, pixelArt: false },
     physics: { default: 'arcade', arcade: { gravity: { y: 2000 }, debug: false } },
-    scene: [PreloadScene, TitleScene, SelectScene, StoryScene, GameScene]
-};
-new Phaser.Game(config);
-  physics: { default: 'arcade', arcade: { gravity: { y: 2000 }, debug: false } },
     scene: [PreloadScene, TitleScene, SelectScene, StoryScene, GameScene]
 };
 new Phaser.Game(config);
