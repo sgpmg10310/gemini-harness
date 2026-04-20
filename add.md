@@ -1,59 +1,53 @@
-# 상세 구현 설계서 (add.md): Nh Ninja V4.3 (에셋 독립형 절차적 생성 및 시스템 안정화)
+# 상세 구현 설계서 (add.md): Nh Ninja "World & Story" 아트 및 서사 설계
 
-## 1. 캐릭터 절차적 생성(Procedural Generation) 전략
+## 1. 환경 및 아트 시스템 (Ninja World Atmosphere)
 
-### 1.1 외부 리소스 의존성 제거
-- **배경:** 외부 이미지 로딩 방식은 네트워크 상태나 CORS 정책에 따라 게임이 중단되는 위험이 큼.
-- **해결책:** Phaser Graphics API를 사용하여 런타임에 캐릭터 텍스처를 직접 드로잉하고 캐싱함.
+### 1.1 Bright Parallax Background (밝은 다층 배경)
+어두운 `0x050515` 단색 배경에서 벗어나, 생동감 있는 낮 시간대의 풍경을 코드로 그려냄.
 
-### 1.2 절차적 생성 워크플로우 (PreloadScene)
-1. `Graphics` 객체 생성: `this.add.graphics()`
-2. 캐릭터 데이터(좌표, 색상)를 기반으로 `draw` 루틴 실행 (원, 사각형, 다각형 조합).
-3. 텍스처 생성: `graphics.generateTexture('char_key', width, height)`
-4. 캐시 등록: 생성된 텍스처는 전역 `TextureManager`에 등록되어 `GameScene`에서 즉시 사용 가능.
-5. 메모리 최적화: 텍스처 생성 후 임시 `Graphics` 객체는 `destroy()` 처리.
+- **Sky (하늘):** 화면 최하단 레이어. 위쪽은 짙은 푸른색(`0x4facfe`), 아래쪽은 밝은 하늘색(`0x00f2fe`)으로 그라데이션 렌더링.
+- **Mountains (원경의 산):** 
+    - `Phaser.Graphics`의 `fillPoints`를 이용해 연속된 뾰족한 다각형(Polygon)을 렌더링하여 웅장한 산맥 구성.
+    - 색상: `0x7b92a6` (청회색)
+    - 스크롤 속도: `0.1x` (가장 느리게 이동)
+- **Clouds (중경의 뭉게구름):** 
+    - `fillEllipse`와 `fillCircle`을 겹쳐 그린 푹신한 흰색 구름 스프라이트 템플릿 제작.
+    - 스크롤 속도: `0.3x` + 자체 `TileSprite` x축 이동(바람을 타고 흘러가는 연출).
 
-## 2. 캐릭터 시각 요소 데이터 구조 (Character Data Spec)
+### 1.2 지형(Platforms)의 재디자인
+- **기존:** 어두운 회색/검정 톤의 사각형.
+- **변경:** 
+    - 상단(Top): 밝은 녹색 잔디 (`0x32cd32`).
+    - 하단(Bottom): 황토색 흙 (`0x8b4513`).
+    - 측면 디테일 추가를 통해 동양적인 흙길과 풀밭 연출.
 
-캐릭터별 고유성을 보장하기 위해 머리카락, 피부, 의상, 특징점(눈매 등)을 정의하는 색상 및 좌표 데이터를 관리함.
+### 1.3 벚꽃 파티클 엔진 (Cherry Blossom Effects)
+- 연분홍색(`0xffb7c5`)과 진분홍색(`0xff69b4`)의 2x2, 3x3 픽셀을 생성.
+- `Phaser.GameObjects.Particles`를 사용하여 화면 우측 상단에서 좌측 하단으로 상시 흩날리도록 구성.
+- `gravityY`, `gravityX`, `rotate`, `alpha` 값에 랜덤성을 부여하여 자연스러운 바람 효과 구현.
 
-### 2.1 공통 물리 규격
-- **크기:** 32x32 픽셀 (Hitbox 기준)
+## 2. 서사 및 컷씬 시스템 (Storytelling & Cutscenes)
 
-### 2.3 캐릭터별 디자인 데이터 (Visual Data Structure)
-- **나루토 (NARUTO):**
-  - **Skin (피부):** 0xFFDBAC (원형)
-  - **Hair (머리카락):** 0xFFFF00 (노랑색, 뾰족한 삼각형 형태 상단 배치)
-  - **Clothes (의상):** 0xFFA500 (주황색 사각형 하단 배치)
-  - **Features (특징):** 0x000000 (양쪽 볼 수염 3줄 라인 드로잉)
-- **사스케 (SASUKE):**
-  - **Skin (피부):** 0xFFDBAC
-  - **Hair (머리카락):** 0x2C2C2C (검정색, 비대칭 삼각형 형태)
-  - **Clothes (의상):** 0x4B0082 (진보라색/남색 계열)
-  - **Features (특징):** 0xFF0000 (붉은색 픽셀로 사륜안 표현)
-- **사쿠라 (SAKURA):**
-  - **Skin (피부):** 0xFFDBAC
-  - **Hair (머리카락):** 0xFFC0CB (분홍색, 둥근 형태)
-  - **Clothes (의상):** 0xFF0000 (빨간색 상의)
-- **카카시 (KAKASHI):**
-  - **Skin (피부):** 0xFFDBAC
-  - **Hair (머리카락):** 0xD3D3D3 (은색, 위로 뻗은 삼각형 형태)
-  - **Clothes (의상):** 0x006400 (짙은 녹색 조끼), 0x000080 (남색 하의)
-  - **Features (특징):** 0x000000 (하단 얼굴 절반 마스크 처리)
+새로운 씬인 `StoryScene`을 `SelectScene`과 `GameScene` 사이에 추가함.
 
-## 3. 사망 및 게임 종료 로직 (Physics Integrity)
+### 2.1 시나리오 스크립트 (Dialogue Data)
+- **배경 스토리:** "탈주 닌자들이 마을의 금지된 두루마리(Forbidden Scroll)를 훔쳐 달아났다."
+- **대사 데이터 구조:**
+  ```json
+  [
+    { speaker: "HOKAGE", text: "마을의 금지된 두루마리를 탈취당했다..." },
+    { speaker: "YOU", text: "제가 반드시 되찾아 오겠습니다!" },
+    { speaker: "HOKAGE", text: "서둘러라! 그들이 국경을 넘기 전에!" }
+  ]
+  ```
 
-### 3.1 물리 엔진 인터럽트 무결성 보장
-- **문제:** 캐릭터 사망 시 애니메이션 재생 중 물리 연산이 지속되어 위치가 틀어지거나 중복 충돌이 발생하는 현상 방지.
-- **해결책 (Interrupt Protocol):**
-  1. `die()` 이벤트 발생 시 즉시 `this.body.enable = false` 설정 (충돌 판정 제외).
-  2. `this.body.setVelocity(0, 0)` 및 `setAcceleration(0, 0)` 호출 (관성 제거).
-  3. 모든 물리 타이머(Tweens, Timers) 중단.
+### 2.2 대화창 UI (Dialogue Box)
+- **구조:** 화면 하단(Y: 450~600)에 검은색 반투명(`0x000000, 0.8`) 박스. 흰색 테두리(`0xffffff`).
+- **타이핑 애니메이션 (Typewriter Effect):** 대사가 한 글자씩(약 30ms 간격) 출력되어 몰입감 제공.
+- **상호작용:** 마우스 클릭 또는 `Space` 키 입력 시 다음 대사로 넘어가거나, 타이핑 중일 땐 즉시 전체 문장 출력.
+- 대사가 모두 끝나면 화면이 암전(Fade Out)되며 밝은 `GameScene`으로 전환.
 
-### 3.2 게임 종료 시퀀스
-- `Scene` 전체의 물리 엔진을 일시 정지(`physics.pause()`)하기 전, 플레이어 캐릭터의 상태를 '사망(Dead)'으로 먼저 변경하여 상태 일관성 확보.
-
-## 4. 변경 이력
-- **V4.0:** 기본 게임 엔진 구축.
-- **V4.1:** CORS 우회 프록시 도입 (외부 리소스 유지).
-- **V4.3:** Phaser Graphics 기반 절차적 생성 시스템 도입 (외부 리소스 완전 독립), 물리 인터럽트 로직 강화.
+## 3. 오디오 및 감각(Feel) 연출
+- **스토리 씬:** 진지하고 장엄한 분위기의 음악.
+- **게임 씬:** 기존의 경쾌한 음악에 밝은 그래픽이 결합되어 '모험'의 느낌 극대화.
+- 스킬 해금 등 중요한 순간에 사운드 피드백(혹은 시각적 Flash 효과) 강화.
